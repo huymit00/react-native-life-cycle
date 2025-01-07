@@ -5,98 +5,97 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
+  Button,
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
-  View,
+  TextInput
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
+// 10 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  const [count, setCount] = useState<number | null>(null);
+  const [inputValue, setInputValue] = useState<string>('');
+  const [message, setMessage] = useState('');
+  // const [isCounting, setIsCounting] = useState(false)
+  const timeIdRef = useRef<NodeJS.Timeout | null>(null)
+
+
+  const onStart = useCallback(() => {
+    handleCount(inputValue)
+  }, [inputValue])
+
+  const handleCount = useCallback((_inputValue: string) => {
+    const number = parseInt(_inputValue, 10)
+    if (isNaN(number) || number <= 0) return
+
+    setMessage('')
+    setCount(number)
+    const goal = number - 10
+
+    if (timeIdRef.current !== null) {
+      clearInterval(timeIdRef.current)
+    }
+
+    timeIdRef.current = setInterval(() => {
+      setCount((pre) => {
+        const newCount = pre! - 1
+
+        if (newCount <= goal) {
+          setMessage('Done')
+          clearInterval(timeIdRef.current!)
+        }
+
+        return newCount
+      });
+    }, 1000);
+  }, [])
+
+
+
+  useEffect(() => { console.log('first') }, [handleCount])
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={{ flex: 1 }}>
+      <TextInput style={styles.input}
+        onChangeText={setInputValue}
+        value={inputValue}
+        keyboardType='numeric'
+        placeholder="Enter a number"
+        onEndEditing={onStart}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+
+      <Button title='Start' onPress={onStart} />
+
+      {count !== null && <Text style={styles.countdown}>{count}</Text>}
+      {message !== '' && <Text style={styles.message}>{message}</Text>}
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+  },
+  countdown: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginVertical: 20,
+  },
+
+  message: {
+    fontSize: 24,
+    marginVertical: 20,
+    color: 'green',
+  },
+
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24,
@@ -116,3 +115,31 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+
+
+
+// const handleStart = () => {
+//   const number = parseInt(inputValue, 10);
+//   if (!isNaN(number) && number > 0) {
+
+//     setCount(number)
+
+//     const goal = number - 10
+
+
+//     const timeId = setInterval(() => {
+//       setCount((pre) => {
+
+//         const newCount = pre! - 1;
+
+//         if (newCount <= goal) {
+//           setMessage('Done!');
+//           clearInterval(timeId);
+//         }
+
+//         return newCount;
+
+//       });
+//     }, 1000);
+//   }
+// }
