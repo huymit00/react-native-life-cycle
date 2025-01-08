@@ -11,7 +11,8 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  TextInput
+  TextInput,
+  AppState,
 } from 'react-native';
 
 
@@ -23,6 +24,8 @@ function App(): React.JSX.Element {
   const [message, setMessage] = useState('');
   // const [isCounting, setIsCounting] = useState(false)
   const timeIdRef = useRef<NodeJS.Timeout | null>(null)
+  // const appState = useRef(AppState.currentState)
+  const [stateVisible, setStateVisible] = useState(AppState.currentState)
 
 
   const onStart = useCallback(() => {
@@ -57,7 +60,19 @@ function App(): React.JSX.Element {
 
 
 
-  useEffect(() => { console.log('first') }, [handleCount])
+
+  useEffect(() => {
+    const a = AppState.addEventListener('change', (state) => {
+
+      console.log(state)
+      setStateVisible(state)
+    })
+
+
+    return a.remove
+  }, [])
+
+  // useEffect(() => { console.log('first') }, [handleCount])
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -70,6 +85,8 @@ function App(): React.JSX.Element {
       />
 
       <Button title='Start' onPress={onStart} />
+
+      <Text >AppState:{stateVisible} </Text>
 
       {count !== null && <Text style={styles.countdown}>{count}</Text>}
       {message !== '' && <Text style={styles.message}>{message}</Text>}
