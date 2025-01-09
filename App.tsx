@@ -14,17 +14,16 @@ import {
   TextInput,
   AppState,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-// 10 
+
 function App(): React.JSX.Element {
 
   const [count, setCount] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState<string>('');
   const [message, setMessage] = useState('');
-  // const [isCounting, setIsCounting] = useState(false)
   const timeIdRef = useRef<NodeJS.Timeout | null>(null)
-  // const appState = useRef(AppState.currentState)
   const [stateVisible, setStateVisible] = useState(AppState.currentState)
 
 
@@ -38,7 +37,6 @@ function App(): React.JSX.Element {
 
     setMessage('')
     setCount(number)
-    const goal = number - 10
 
     if (timeIdRef.current !== null) {
       clearInterval(timeIdRef.current)
@@ -48,7 +46,7 @@ function App(): React.JSX.Element {
       setCount((pre) => {
         const newCount = pre! - 1
 
-        if (newCount <= goal) {
+        if (newCount <= 0) {
           setMessage('Done')
           clearInterval(timeIdRef.current!)
         }
@@ -60,19 +58,75 @@ function App(): React.JSX.Element {
 
 
 
+  const storeCount = useCallback(async (_count: number | null) => {
+
+    try {
+      if (_count === null) return
+
+      await AsyncStorage.setItem('count', _count.toString())
+
+    } catch (error) {
+      console.log("🚀 ~ storeCount ~ error:", error)
+
+    }
+
+  }, [])
 
   useEffect(() => {
-    const a = AppState.addEventListener('change', (state) => {
+    storeCount(count)
+  }, [count])
 
-      console.log(state)
-      setStateVisible(state)
+
+  useEffect(() => {
+    const a = AppState.addEventListener('change', async (nextState) => {
+      try {
+        if (nextState == 'background') {
+          const time = Date.now()
+          await AsyncStorage.setItem('timeExit', time.toString())
+        }
+      }
+      catch (error) {
+        console.error("Error!", error)
+      }
     })
-
 
     return a.remove
   }, [])
 
-  // useEffect(() => { console.log('first') }, [handleCount])
+
+
+  useEffect(() => {
+    const getTimeCount = async () => {
+      try {
+        const timeExit = await AsyncStorage.getItem('timeExit')
+
+        const _count = await AsyncStorage.getItem('count')
+
+
+        if (timeExit !== null && _count !== null) {
+          const timeOpenApp = Date.now()
+
+          const countNumber = Math.round((timeOpenApp - Number(timeExit)) / 1000)
+
+          const newCount = Number(_count) - countNumber
+
+
+          if (newCount > 0) {
+            handleCount(newCount.toString())
+          }
+        }
+
+      }
+      catch (error) {
+        console.error('getItem error', error)
+      }
+    }
+
+    getTimeCount()
+
+  }, [])
+
+
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
